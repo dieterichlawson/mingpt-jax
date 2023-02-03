@@ -6,6 +6,10 @@ wandb/
 *.pkl
 bin/**/*.out
 bin/**/*.err
+*.pkl
+*.bin
+*.txt
+*.npy
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
