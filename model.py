@@ -272,7 +272,7 @@ class Transformer(eqx.Module):
     num_new_tokens = self.block_size - prefix_len
     assert num_new_tokens > 0
     padded_prefix = jnp.pad(prefix, (0, num_new_tokens))
-    assert padded_prefix.shape == self.block_size
+    assert padded_prefix.shape[0] == self.block_size
 
     def sample_next_token(key, in_tokens, prefix_len):
       logits = self.__call__(in_tokens)

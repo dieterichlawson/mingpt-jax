@@ -1,8 +1,6 @@
 from absl import app
-from functools import partial
 from pathlib import Path
 import pickle
-from timeit import default_timer as timer
 
 from ml_collections import config_dict
 from ml_collections import config_flags
@@ -32,6 +30,9 @@ config.train.beta1 = 0.9
 config.train.beta2 = 0.95
 config.train.weight_decay = 0.1
 config.train.grad_norm_clip = 1.
+
+config.summary = config_dict.ConfigDict()
+config.summary.summarize_every = 10
 
 _CFG = config_flags.DEFINE_config_dict('cfg', config)
 
@@ -102,15 +103,16 @@ def train(cfg):
     batch_loss = jax.vmap(loss, in_axes=(None, 0, 0))(model, batch_inputs, batch_targets)
     return jnp.mean(batch_loss)
 
+  @jax.jit
+  def summary_generate(key, model):
+    prefix_str = "O god, O god!"
+    prefix_enc = jnp.array(encode(prefix_str))
+    generation = model.generate(key, prefix_enc)
+    return generation
+
   def summarize(key, model, loss_val, step):
     print(f"Step {step} loss: {loss_val:0.4f}")
-    # Generate a string
-    prefix_str = "O god, O god!"
-    prefix_enc = encode(prefix_str)
-    num_new_tokens = cfg.model.block_size - len(prefix_str)
-    inp_seq = jnp.array(prefix_enc + ([0] * num_new_tokens))
-    assert inp_seq.shape[0] == cfg.model.block_size
-    generation = model.generate(key, inp_seq, len(prefix_str), num_new_tokens)
+    generation = summary_generate(key, model)
     generated_str = decode(generation)
     print(generated_str)
 
@@ -130,7 +132,8 @@ def train(cfg):
   for t, (inps, targs) in enumerate(data_itr(key)):
     loss_val, model, opt_state = train_step(model, inps, targs, opt_state)
     key, subkey = jax.random.split(key)
-    summarize(subkey, model, loss_val, t)
+    if t % cfg.summary.summarize_every == 0:
+      summarize(subkey, model, loss_val, t)
 
 
 def main(_):

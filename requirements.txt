@@ -1,0 +1,8 @@
+requests
+absl-py
+equinox
+jax
+jaxlib
+ml-collections
+optax
+snax @ git+https://github.com/dieterichlawson/snax.git
